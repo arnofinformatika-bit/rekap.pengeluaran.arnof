@@ -878,6 +878,15 @@ function perKategori(u){
   return o;
 }
 const rp = n => "Rp " + Math.round(n||0).toLocaleString("id-ID");
+function formatRupiahInput(el){
+  let val = el.value.replace(/\D/g, "");
+  if(!val){ el.value = ""; return; }
+  el.value = parseInt(val, 10).toLocaleString("id-ID");
+}
+function parseRupiahInput(val){
+  if(typeof val === "number") return val;
+  return parseInt(String(val||"").replace(/\D/g, ""), 10) || 0;
+}
 function tglID(iso){
   const d = new Date(iso);
   return d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"});
@@ -1429,7 +1438,7 @@ function halSaldo(u){
   return '<h2 class="page-title">Masukkan Saldo</h2><p class="page-sub">Catat uang masuk: kiriman orang tua, gaji part-time, beasiswa, dll.</p>'
   + '<div class="grid cols2">'
   + '<div class="card"><form onsubmit="tambahSaldo(event)">'
-    + '<div class="field"><label>Nominal (Rp)</label><input type="number" id="sNominal" min="1" step="100" placeholder="1000000" required></div>'
+    + '<div class="field"><label>Nominal (Rp)</label><input type="text" inputmode="numeric" id="sNominal" placeholder="5.000.000" required oninput="formatRupiahInput(this)"></div>'
     + '<div class="field"><label>Tanggal</label><input type="date" id="sTanggal" required></div>'
     + '<div class="field"><label>Keterangan</label><input type="text" id="sKet" placeholder="Kiriman bulanan dari orang tua" required></div>'
     + '<button class="btn btn-block" type="submit">Tambahkan saldo</button>'
@@ -1442,7 +1451,9 @@ function halSaldo(u){
 function tambahSaldo(e){
   e.preventDefault();
   const u = userAktif();
-  u.transaksi.push({ id:uid("trx"), tipe:"masuk", nominal:+sNominal.value, tanggal:sTanggal.value, kategori:"Pemasukan", keterangan:sKet.value.trim(), bukti:null });
+  const nominal = parseRupiahInput(sNominal.value);
+  if(!nominal || nominal <= 0) return toast("Masukkan nominal yang valid");
+  u.transaksi.push({ id:uid("trx"), tipe:"masuk", nominal, tanggal:sTanggal.value, kategori:"Pemasukan", keterangan:sKet.value.trim(), bukti:null });
   simpan(); toast("Saldo berhasil ditambahkan"); goto("dashboard");
 }
 
@@ -1456,7 +1467,7 @@ function halPengeluaran(u){
     + '</div></div>'
     + '<div class="field hide" id="wrapLainnya"><label>Masukkan keterangan lainnya</label>'
       + '<input type="text" id="pLainnya" placeholder="Contoh: servis motor, kado teman"></div>'
-    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="number" id="pNominal" min="1" step="100" placeholder="50000" required></div>'
+    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="text" inputmode="numeric" id="pNominal" placeholder="50.000" required oninput="formatRupiahInput(this)"></div>'
       + '<div class="field"><label>Tanggal</label><input type="date" id="pTanggal" required></div></div>'
     + '<div class="field"><label>Keterangan</label><textarea id="pKet" placeholder="Belanja bulanan di minimarket" required></textarea></div>'
     + '<div class="field"><label>Upload bukti transaksi (opsional)</label>'
@@ -1500,7 +1511,8 @@ function hapusBukti(){ state.bukti = null; previewBukti.innerHTML = ""; fileBukt
 function tambahPengeluaran(e){
   e.preventDefault();
   const u = userAktif(), r = ringkas(u);
-  const nominal = +pNominal.value;
+  const nominal = parseRupiahInput(pNominal.value);
+  if(!nominal || nominal <= 0) return toast("Masukkan nominal yang valid");
   const kategori = document.querySelector('input[name=kat]:checked').value;
   if(nominal > r.saldo) return toast("Saldo tidak cukup. Sisa " + rp(r.saldo));
   let ket = pKet.value.trim();
@@ -1518,13 +1530,13 @@ function halNabung(u){
   + '</div>'
   + '<div class="grid cols2" style="margin-top:14px">'
   + '<div class="card"><h3>Tabung uang</h3><p class="desc">Pindahkan dari saldo harian ke tabungan.</p><form onsubmit="tambahNabung(event)">'
-    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="number" id="nNominal" min="1" step="100" placeholder="200000" required></div>'
+    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="text" inputmode="numeric" id="nNominal" placeholder="200.000" required oninput="formatRupiahInput(this)"></div>'
     + '<div class="field"><label>Tanggal</label><input type="date" id="nTanggal" required></div></div>'
     + '<div class="field"><label>Tujuan menabung</label><input type="text" id="nKet" placeholder="Dana darurat / beli laptop" required></div>'
     + '<button class="btn btn-block" type="submit" style="background:var(--purple)">Tabung sekarang</button>'
   + '</form></div>'
   + '<div class="card"><h3>Tarik tabungan</h3><p class="desc">Kembalikan uang tabungan ke saldo harian.</p><form onsubmit="tarikNabung(event)">'
-    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="number" id="tNominal" min="1" step="100" placeholder="100000" required></div>'
+    + '<div class="row"><div class="field"><label>Nominal (Rp)</label><input type="text" inputmode="numeric" id="tNominal" placeholder="100.000" required oninput="formatRupiahInput(this)"></div>'
     + '<div class="field"><label>Tanggal</label><input type="date" id="tTanggal" required></div></div>'
     + '<div class="field"><label>Alasan penarikan</label><input type="text" id="tKet" placeholder="Bayar UKT semester" required></div>'
     + '<button class="btn btn-block btn-ghost" type="submit">Tarik tabungan</button>'
@@ -1532,14 +1544,16 @@ function halNabung(u){
 }
 function tambahNabung(e){
   e.preventDefault();
-  const u = userAktif(), r = ringkas(u), n = +nNominal.value;
+  const u = userAktif(), r = ringkas(u), n = parseRupiahInput(nNominal.value);
+  if(!n || n <= 0) return toast("Masukkan nominal yang valid");
   if(n > r.saldo) return toast("Saldo harian tidak cukup. Sisa " + rp(r.saldo));
   u.transaksi.push({ id:uid("trx"), tipe:"nabung", nominal:n, tanggal:nTanggal.value, kategori:"Tabungan", keterangan:nKet.value.trim(), bukti:null });
   simpan(); toast("Berhasil menabung " + rp(n)); render();
 }
 function tarikNabung(e){
   e.preventDefault();
-  const u = userAktif(), r = ringkas(u), n = +tNominal.value;
+  const u = userAktif(), r = ringkas(u), n = parseRupiahInput(tNominal.value);
+  if(!n || n <= 0) return toast("Masukkan nominal yang valid");
   if(n > r.tabungan) return toast("Tabungan tidak cukup. Tersedia " + rp(r.tabungan));
   u.transaksi.push({ id:uid("trx"), tipe:"tarik", nominal:n, tanggal:tTanggal.value, kategori:"Tabungan", keterangan:tKet.value.trim(), bukti:null });
   simpan(); toast("Tabungan ditarik " + rp(n)); render();
