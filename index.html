@@ -735,7 +735,6 @@ tbody tr:hover{background:var(--surface-2)}
         <b id="whoNameSidebar">—</b>
         <span id="whoRoleSidebar">—</span>
       </div>
-      <button type="button" class="btn btn-sm btn-ghost" style="font-size:11px;padding:3px 7px;margin-left:auto;white-space:nowrap" onclick="tukarPeran()" title="Ganti peran antara Admin ↔ User">⚡ Peran</button>
     </div>
 
     <div class="sidebar-section-title">Navigasi Utama</div>
@@ -744,10 +743,6 @@ tbody tr:hover{background:var(--surface-2)}
 
     <!-- Tombol Aksi di Bawah Sidebar -->
     <div class="sidebar-footer">
-      <button type="button" class="sidebar-btn-action" onclick="tukarPeran()" title="Tukar Peran (Admin / User)">
-        <span class="btn-icon">⚡</span>
-        <span class="btn-text" id="btnTukarPeranText">Ganti Peran</span>
-      </button>
       <button type="button" class="sidebar-btn-action" onclick="toggleTheme()" title="Ganti tema">
         <span class="btn-icon">◐</span>
         <span class="btn-text">Ganti Tema</span>
@@ -1005,16 +1000,6 @@ function googleAkunBaru(e){
   }
   DB.sesi = u.id; simpan(); tutupModal(); bukaApp();
   toast("Berhasil masuk dengan Google (" + (role === "admin" ? "Admin" : "User") + ")");
-}
-
-function tukarPeran(){
-  const u = userAktif();
-  if(!u) return;
-  u.role = u.role === "admin" ? "user" : "admin";
-  simpan();
-  const labelPeran = u.role === "admin" ? "Administrator" : "Mahasiswa / Pengguna";
-  toast("⚡ Peran akun diganti menjadi: " + labelPeran);
-  bukaApp();
 }
 
 /* =====================================================
@@ -1370,9 +1355,6 @@ function renderNavigation(){
   if(whoName) whoName.textContent = u.nama;
   if(whoRole) whoRole.textContent = roleText;
   if(roleLabel) roleLabel.textContent = u.role === "admin" ? "Panel Admin" : "Panel Pengguna";
-
-  const btnTukar = document.getElementById("btnTukarPeranText");
-  if(btnTukar) btnTukar.textContent = u.role === "admin" ? "Ke Mode User" : "Ke Mode Admin";
 
   updateFirebaseUI();
 }
