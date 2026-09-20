@@ -913,22 +913,36 @@ function pesanAuth(txt, ok){ authMsg.innerHTML = '<div class="msg '+(ok?"ok":"er
 
 function doRegister(e){
   e.preventDefault();
-  const nama = rgNama.value.trim(), email = rgEmail.value.trim().toLowerCase(), pass = rgPass.value;
+  const elNama = document.getElementById("rgNama");
+  const elEmail = document.getElementById("rgEmail");
+  const elPass = document.getElementById("rgPass");
+  const nama = elNama ? elNama.value.trim() : "";
+  const email = elEmail ? elEmail.value.trim().toLowerCase() : "";
+  const pass = elPass ? elPass.value : "";
+  if(!email || !pass) return pesanAuth("Lengkapi data pendaftaran.");
   if(DB.users.some(u => u.email === email)) return pesanAuth("Email sudah terdaftar.");
   DB.users.push({ id:uid("usr"), nama, email, password:pass, role:"user", transaksi:[], dibuat:Date.now() });
   simpan();
-  formReg.reset(); switchAuth("login");
+  const formReg = document.getElementById("formReg");
+  if(formReg) formReg.reset();
+  switchAuth("login");
   pesanAuth("Akun berhasil dibuat. Silakan masuk.", true);
 }
 function doLogin(e){
   e.preventDefault();
-  const email = lgEmail.value.trim().toLowerCase(), pass = lgPass.value;
+  const elEmail = document.getElementById("lgEmail");
+  const elPass = document.getElementById("lgPass");
+  const email = elEmail ? elEmail.value.trim().toLowerCase() : "";
+  const pass = elPass ? elPass.value : "";
   const akunGoogle = DB.users.find(x => x.email === email && !x.password);
   if(akunGoogle) return pesanAuth("Akun ini terdaftar lewat Google. Gunakan tombol \u201cMasuk dengan Google\u201d.");
   const u = DB.users.find(x => x.email === email && x.password === pass);
   if(!u) return pesanAuth("Email atau password salah.");
   DB.sesi = u.id; simpan();
-  formLogin.reset(); authMsg.innerHTML = "";
+  const formLogin = document.getElementById("formLogin");
+  if(formLogin) formLogin.reset();
+  const authMsg = document.getElementById("authMsg");
+  if(authMsg) authMsg.innerHTML = "";
   bukaApp();
 }
 /* ---- Masuk lewat Google ----
@@ -1460,10 +1474,13 @@ function tambahSaldo(e){
   e.preventDefault();
   const u = userAktif();
   if(!u) return toast("Sesi berakhir, silakan masuk kembali");
-  const nominal = parseRupiahInput(sNominal.value);
+  const elNominal = document.getElementById("sNominal");
+  const elTanggal = document.getElementById("sTanggal");
+  const elKet = document.getElementById("sKet");
+  const nominal = parseRupiahInput(elNominal ? elNominal.value : "");
   if(!nominal || nominal <= 0) return toast("Masukkan nominal yang valid");
-  const tgl = sTanggal.value || tglHariIni();
-  const ket = sKet.value.trim() || "Pemasukan saldo";
+  const tgl = (elTanggal && elTanggal.value) ? elTanggal.value : tglHariIni();
+  const ket = (elKet && elKet.value.trim()) ? elKet.value.trim() : "Pemasukan saldo";
   u.transaksi.push({ id:uid("trx"), tipe:"masuk", nominal, tanggal:tgl, kategori:"Pemasukan", keterangan:ket, bukti:null });
   simpan();
   toast("✅ Saldo berhasil ditambahkan!");
@@ -1498,8 +1515,10 @@ function halPengeluaran(u){
   + '</div>';
 }
 function cekLainnya(){
-  const v = document.querySelector('input[name=kat]:checked').value;
-  wrapLainnya.classList.toggle("hide", v !== "Kebutuhan lainnya");
+  const radio = document.querySelector('input[name=kat]:checked');
+  const v = radio ? radio.value : "";
+  const wrap = document.getElementById("wrapLainnya");
+  if(wrap) wrap.classList.toggle("hide", v !== "Kebutuhan lainnya");
 }
 function pilihBukti(input){
   const f = input.files[0]; if(!f) return;
@@ -1512,7 +1531,8 @@ function pilihBukti(input){
       c.width = Math.round(img.width*skala); c.height = Math.round(img.height*skala);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
       state.bukti = c.toDataURL("image/jpeg", 0.6);
-      previewBukti.innerHTML = '<div class="preview"><img src="'+state.bukti+'" alt="Pratinjau bukti">'
+      const pb = document.getElementById("previewBukti");
+      if(pb) pb.innerHTML = '<div class="preview"><img src="'+state.bukti+'" alt="Pratinjau bukti">'
         + '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+esc(f.name)+'</div>'
         + '<button type="button" class="link-btn" onclick="hapusBukti()">Hapus bukti</button></div></div>';
     };
@@ -1520,19 +1540,30 @@ function pilihBukti(input){
   };
   reader.readAsDataURL(f);
 }
-function hapusBukti(){ state.bukti = null; previewBukti.innerHTML = ""; fileBukti.value = ""; }
+function hapusBukti(){
+  state.bukti = null;
+  const pb = document.getElementById("previewBukti");
+  const fb = document.getElementById("fileBukti");
+  if(pb) pb.innerHTML = "";
+  if(fb) fb.value = "";
+}
 
 function tambahPengeluaran(e){
   e.preventDefault();
   const u = userAktif(), r = ringkas(u);
   if(!u) return toast("Sesi berakhir, silakan masuk kembali");
-  const nominal = parseRupiahInput(pNominal.value);
+  const elNominal = document.getElementById("pNominal");
+  const elTanggal = document.getElementById("pTanggal");
+  const elKet = document.getElementById("pKet");
+  const elLainnya = document.getElementById("pLainnya");
+  const nominal = parseRupiahInput(elNominal ? elNominal.value : "");
   if(!nominal || nominal <= 0) return toast("Masukkan nominal yang valid");
-  const kategori = document.querySelector('input[name=kat]:checked').value;
+  const katRadio = document.querySelector('input[name=kat]:checked');
+  const kategori = katRadio ? katRadio.value : "Kebutuhan pokok";
   if(nominal > r.saldo) return toast("Saldo tidak cukup. Sisa " + rp(r.saldo));
-  let ket = pKet.value.trim() || kategori;
-  if(kategori === "Kebutuhan lainnya" && pLainnya.value.trim()) ket = pLainnya.value.trim() + " — " + ket;
-  const tgl = pTanggal.value || tglHariIni();
+  let ket = (elKet && elKet.value.trim()) ? elKet.value.trim() : kategori;
+  if(kategori === "Kebutuhan lainnya" && elLainnya && elLainnya.value.trim()) ket = elLainnya.value.trim() + " — " + ket;
+  const tgl = (elTanggal && elTanggal.value) ? elTanggal.value : tglHariIni();
   u.transaksi.push({ id:uid("trx"), tipe:"keluar", nominal, tanggal:tgl, kategori, keterangan:ket, bukti:state.bukti });
   state.bukti = null; simpan(); toast("Pengeluaran tercatat"); goto("riwayat");
 }
@@ -1563,11 +1594,14 @@ function tambahNabung(e){
   e.preventDefault();
   const u = userAktif(), r = ringkas(u);
   if(!u) return toast("Sesi berakhir, silakan masuk kembali");
-  const n = parseRupiahInput(nNominal.value);
+  const elNominal = document.getElementById("nNominal");
+  const elTanggal = document.getElementById("nTanggal");
+  const elKet = document.getElementById("nKet");
+  const n = parseRupiahInput(elNominal ? elNominal.value : "");
   if(!n || n <= 0) return toast("Masukkan nominal yang valid");
   if(n > r.saldo) return toast("Saldo harian tidak cukup. Sisa " + rp(r.saldo));
-  const tgl = nTanggal.value || tglHariIni();
-  const ket = nKet.value.trim() || "Tabungan";
+  const tgl = (elTanggal && elTanggal.value) ? elTanggal.value : tglHariIni();
+  const ket = (elKet && elKet.value.trim()) ? elKet.value.trim() : "Tabungan";
   u.transaksi.push({ id:uid("trx"), tipe:"nabung", nominal:n, tanggal:tgl, kategori:"Tabungan", keterangan:ket, bukti:null });
   simpan(); toast("Berhasil menabung " + rp(n)); render();
 }
@@ -1575,11 +1609,14 @@ function tarikNabung(e){
   e.preventDefault();
   const u = userAktif(), r = ringkas(u);
   if(!u) return toast("Sesi berakhir, silakan masuk kembali");
-  const n = parseRupiahInput(tNominal.value);
+  const elNominal = document.getElementById("tNominal");
+  const elTanggal = document.getElementById("tTanggal");
+  const elKet = document.getElementById("tKet");
+  const n = parseRupiahInput(elNominal ? elNominal.value : "");
   if(!n || n <= 0) return toast("Masukkan nominal yang valid");
   if(n > r.tabungan) return toast("Tabungan tidak cukup. Tersedia " + rp(r.tabungan));
-  const tgl = tTanggal.value || tglHariIni();
-  const ket = tKet.value.trim() || "Penarikan tabungan";
+  const tgl = (elTanggal && elTanggal.value) ? elTanggal.value : tglHariIni();
+  const ket = (elKet && elKet.value.trim()) ? elKet.value.trim() : "Penarikan tabungan";
   u.transaksi.push({ id:uid("trx"), tipe:"tarik", nominal:n, tanggal:tgl, kategori:"Tabungan", keterangan:ket, bukti:null });
   simpan(); toast("Tabungan ditarik " + rp(n)); render();
 }
