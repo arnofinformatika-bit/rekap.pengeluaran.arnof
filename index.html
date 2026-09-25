@@ -1132,20 +1132,7 @@
         </div>
         <div id="authMsg"></div>
 
-        <button type="button" class="btn-google" onclick="bukaGoogle()">
-          <svg viewBox="0 0 48 48">
-            <path fill="#EA4335"
-              d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.5 13.2l7.8 6.1C12.2 13.2 17.6 9.5 24 9.5z" />
-            <path fill="#4285F4"
-              d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.6-4.9 7.3l7.6 5.9c4.4-4.1 7.1-10.2 7.1-17.7z" />
-            <path fill="#FBBC05"
-              d="M10.3 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.5 10.8l7.8-6.1z" />
-            <path fill="#34A853"
-              d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.4 0-11.8-3.7-13.7-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z" />
-          </svg>
-          Masuk dengan Google
-        </button>
-        <div class="pemisah">atau pakai email</div>
+
 
         <form id="formLogin" onsubmit="doLogin(event)">
           <div class="field"><label>Email</label><input type="email" id="lgEmail" placeholder="nama@email.com" required>
@@ -1806,95 +1793,7 @@
       DB.sesi = u.id; simpan(); formLogin.reset(); authMsg.innerHTML = "";
       bukaApp();
     }
-    function bukaGoogle() {
-      toast("Menghubungkan ke Google...");
 
-      if (typeof firebase !== "undefined" && firebase.auth) {
-        try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          provider.addScope("email");
-          provider.addScope("profile");
-
-          firebase.auth().signInWithPopup(provider).then((result) => {
-            const gUser = result.user;
-            if (!gUser) return;
-            const email = (gUser.email || "").toLowerCase();
-            const nama = gUser.displayName || email.split("@")[0] || "Pengguna Google";
-
-            let u = DB.users.find(x => x.email === email);
-            if (!u) {
-              u = { id: uid("usr"), nama, email, password: null, provider: "google", role: "user", transaksi: [], dibuat: Date.now() };
-              DB.users.push(u);
-            } else {
-              u.provider = "google";
-              if (nama) u.nama = nama;
-            }
-
-            DB.sesi = u.id;
-            simpan();
-            toast("✅ Berhasil masuk sebagai " + u.nama);
-            bukaApp();
-          }).catch((err) => {
-            console.warn("Firebase Google Sign-In notice:", err.message);
-            tampilkanModalPilihGoogle();
-          });
-          return;
-        } catch (e) {
-          console.warn("Google Auth error:", e);
-        }
-      }
-
-      tampilkanModalPilihGoogle();
-    }
-
-    function tampilkanModalPilihGoogle() {
-      const akun = DB.users.filter(u => u.provider === "google");
-      const daftar = akun.length ? akun.map(u =>
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
-        + '<button type="button" class="btn btn-block btn-ghost" style="flex:1;justify-content:flex-start;margin-bottom:0;text-align:left;height:auto;padding:10px 12px" onclick="pilihAkunGoogle(\'' + u.id + '\')">'
-        + '<div><b>' + esc(u.nama) + '</b><br><span style="color:var(--muted);font-size:12px">' + esc(u.email) + '</span></div>'
-        + '</button>'
-        + '<button type="button" class="btn btn-danger" title="Hapus dari daftar" onclick="hapusAkunGoogle(\'' + u.id + '\', event)" style="padding:10px 12px;flex:none;height:auto">🗑️ Hapus</button>'
-        + '</div>'
-      ).join("") : '<p class="desc" style="margin-bottom:12px;text-align:center">Belum ada akun Google terdaftar.</p>';
-
-      modalHost.innerHTML = '<div class="modal" onclick="if(event.target===this)tutupModal()"><div class="modal-box">'
-        + '<div class="modal-head"><h3>Pilih Akun Google</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
-        + daftar
-        + '<form onsubmit="googleAkunBaru(event)" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
-        + '<h4 style="margin:0 0 10px 0;font-size:13px;color:var(--muted)">Tambah / Masuk Akun Google Lain:</h4>'
-        + '<div class="field"><label>Nama lengkap</label><input type="text" id="gNama" placeholder="Budi Santoso" required></div>'
-        + '<div class="field"><label>Email Gmail</label><input type="email" id="gEmail" placeholder="budi@gmail.com" required></div>'
-        + '<button class="btn btn-block" type="submit">Lanjutkan dengan Google</button>'
-        + '</form>'
-        + '</div></div>';
-    }
-
-    function hapusAkunGoogle(id, ev) {
-      if (ev) ev.stopPropagation();
-      if (!confirm("Yakin ingin menghapus akun Google ini dari daftar?")) return;
-      DB.users = DB.users.filter(u => u.id !== id);
-      if (DB.sesi === id) DB.sesi = null;
-      simpan();
-      toast("Akun Google berhasil dihapus.");
-      tampilkanModalPilihGoogle();
-    }
-
-    function pilihAkunGoogle(id) { DB.sesi = id; simpan(); tutupModal(); bukaApp(); }
-    function googleAkunBaru(e) {
-      e.preventDefault();
-      const nama = gNama.value.trim(), email = gEmail.value.trim().toLowerCase();
-      if (!email) return toast("Masukkan email Gmail.");
-      let u = DB.users.find(x => x.email === email);
-      if (!u) {
-        u = { id: uid("usr"), nama: nama || email.split("@")[0], email, password: null, provider: "google", role: "user", transaksi: [], dibuat: Date.now() };
-        DB.users.push(u);
-      } else {
-        u.provider = "google";
-        if (nama) u.nama = nama;
-      }
-      DB.sesi = u.id; simpan(); tutupModal(); bukaApp();
-    }
 
     function bukaModalFirebase() {
       const isOk = isFirebaseConnected;
