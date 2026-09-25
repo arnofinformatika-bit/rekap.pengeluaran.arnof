@@ -7,8 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Firebase SDK v10 — Firestore & Realtime Database -->
+<!-- Firebase SDK v10 — Auth, Firestore & Realtime Database -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <style>
@@ -656,6 +657,7 @@ const ICONS = {
   user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>`,
   grafik: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`,
   aktivitas: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line><path d="M6 12l4-4 3 3 5-5"></path></svg>`,
+  pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M10 12h2a1 1 0 0 0 0-2h-2v4"></path><path d="M15 10h-2v4h2a1 1 0 0 0 0-2h-2"></path></svg>`,
   word: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
   pengaturan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
   theme: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`,
@@ -668,6 +670,7 @@ const TILES_USER = [
   { id: "pengeluaran", label: "Pengeluaran", icon: ICONS.pengeluaran, action: () => goto("pengeluaran") },
   { id: "nabung", label: "Nabung", icon: ICONS.nabung, action: () => goto("nabung") },
   { id: "riwayat", label: "Riwayat Transaksi", icon: ICONS.riwayat, action: () => goto("riwayat") },
+  { id: "pdf", label: "Cetak PDF", icon: ICONS.pdf, action: () => cetakKePDF() },
   { id: "word", label: "Cetak Word", icon: ICONS.word, action: () => cetakKeWord() },
   { id: "aktivitas", label: "Aktivitas", icon: ICONS.aktivitas, action: () => goto("riwayat") },
   { id: "pengaturan", label: "Pengaturan", icon: ICONS.pengaturan, action: () => bukaModalFirebase() },
@@ -680,6 +683,7 @@ const TILES_ADMIN = [
   { id: "pengeluaran", label: "Pengeluaran", icon: ICONS.pengeluaran, action: () => goto("pengeluaran") },
   { id: "nabung", label: "Nabung", icon: ICONS.nabung, action: () => goto("nabung") },
   { id: "riwayat", label: "Riwayat Transaksi", icon: ICONS.riwayat, action: () => goto("riwayat") },
+  { id: "pdf", label: "Cetak PDF", icon: ICONS.pdf, action: () => cetakKePDF() },
   { id: "word", label: "Cetak Word", icon: ICONS.word, action: () => cetakKeWord() },
   { id: "aktivitas", label: "Aktivitas", icon: ICONS.aktivitas, action: () => goto("riwayat") },
   { id: "pengaturan", label: "Pengaturan", icon: ICONS.pengaturan, action: () => bukaModalFirebase() },
@@ -826,6 +830,9 @@ function muat() {
     if(raw) DB = JSON.parse(raw);
   } catch(e){}
   if(!DB.users) DB.users = [];
+  
+
+
   if(!DB.users.some(u => u.role === "admin")){
     DB.users.push({ id:"adm-1", nama:"Administrator", email:"admin@dompetku.id", password:"arnof1111uyuy", role:"admin", transaksi:[], dibuat:Date.now() });
   }
@@ -887,6 +894,174 @@ function getGreetingText(nama) {
   if (hr >= 5 && hr < 12) return `Good Morning, ${shortName} ☀️`;
   if (hr >= 12 && hr < 18) return `Good Afternoon, ${shortName} 🌤️`;
   return `Good Evening, ${shortName} 🌙`;
+}
+
+/* CETAK PDF (.pdf) */
+function cetakKePDF() {
+  const u = userAktif(); if(!u) return toast("Pengguna tidak ditemukan.");
+  const r = ringkas(u);
+  const now = new Date();
+  const tglCetak = now.toLocaleDateString("id-ID", { day:"2-digit", month:"long", year:"numeric" });
+  
+  let data = [];
+  if(u.role === "admin"){
+    DB.users.forEach(usr => { (usr.transaksi||[]).forEach(t => data.push({...t, usrNama: usr.nama})); });
+  } else {
+    data = [...(u.transaksi||[])];
+  }
+  data.sort((a,b)=> new Date(b.tanggal)-new Date(a.tanggal));
+
+  const me = u.role === "admin" ? null : perKategori(u);
+  let katRowsHtml = "";
+  if(me && r.keluar > 0){
+    katRowsHtml = KATEGORI.map(k => {
+      const val = me[k] || 0;
+      if(val === 0) return "";
+      const pct = Math.round((val / r.keluar) * 100);
+      return '<tr>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;">'+esc(k)+'</td>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:right;font-weight:bold">'+rp(val)+'</td>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:center;">'+pct+'%</td>'
+      + '</tr>';
+    }).join("");
+  }
+
+  let tableRows = data.map((t, idx) => `
+    <tr>
+      <td style="border:1px solid #e2e8f0;padding:8px;text-align:center">${idx + 1}</td>
+      <td style="border:1px solid #e2e8f0;padding:8px">${tglID(t.tanggal)}</td>
+      <td style="border:1px solid #e2e8f0;padding:8px;text-align:center;font-weight:bold">${labelTipe(t.tipe)}</td>
+      <td style="border:1px solid #e2e8f0;padding:8px">${esc(t.kategori || "—")}</td>
+      <td style="border:1px solid #e2e8f0;padding:8px">${esc(t.keterangan || "—")}</td>
+      <td style="border:1px solid #e2e8f0;padding:8px;text-align:right;font-weight:bold">${rp(t.nominal)}</td>
+    </tr>
+  `).join("");
+
+  if(!data.length) {
+    tableRows = `<tr><td colspan="6" style="border:1px solid #e2e8f0;padding:12px;text-align:center">Belum ada data transaksi tersimpan.</td></tr>`;
+  }
+
+  const printHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Laporan Keuangan - ${esc(u.nama)}</title>
+      <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; padding: 20px; margin: 0; background: #ffffff; line-height: 1.5; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+        .header h1 { color: #2563eb; margin: 0; font-size: 22px; font-weight: 800; }
+        .header p { margin: 4px 0 0; font-size: 13px; color: #64748b; }
+        .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: center; }
+        .stat-card .lbl { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+        .stat-card .val { font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+        h3 { color: #0f172a; font-size: 15px; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid #2563eb; padding-left: 8px; }
+        table.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { background: #2563eb; color: #ffffff; padding: 8px 10px; border: 1px solid #2563eb; text-align: left; }
+        td { border: 1px solid #e2e8f0; padding: 7px 10px; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .footer { margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <h1>DOMPETKU — LAPORAN KEUANGAN</h1>
+          <p>Laporan Resmi Pemasukan & Pengeluaran</p>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;font-size:14px;color:#2563eb">Laporan PDF</div>
+          <div style="font-size:12px;color:#64748b">${tglCetak}</div>
+        </div>
+      </div>
+
+      <div class="meta-box">
+        <div class="meta-grid">
+          <div><b>Nama Pengguna:</b> ${esc(u.nama)}</div>
+          <div><b>Email:</b> ${esc(u.email || "—")}</div>
+          <div><b>Peran:</b> ${esc(u.role.toUpperCase())}</div>
+          <div><b>Tanggal Cetak:</b> ${tglCetak}</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="lbl">Saldo Utama</div><div class="val" style="color:#2563eb">${rp(r.saldo)}</div></div>
+        <div class="stat-card"><div class="lbl">Total Pemasukan</div><div class="val" style="color:#16a34a">${rp(r.masuk)}</div></div>
+        <div class="stat-card"><div class="lbl">Total Pengeluaran</div><div class="val" style="color:#dc2626">${rp(r.keluar)}</div></div>
+        <div class="stat-card"><div class="lbl">Total Tabungan</div><div class="val" style="color:#9333ea">${rp(r.tabungan)}</div></div>
+      </div>
+
+      ${katRowsHtml ? `
+        <h3>Pengeluaran Per Kategori</h3>
+        <table style="width:100%;max-width:500px;border-collapse:collapse;font-size:12px;margin-bottom:15px;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;">Kategori</th>
+              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;text-align:right;">Jumlah</th>
+              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;text-align:center;">Persentase</th>
+            </tr>
+          </thead>
+          <tbody>${katRowsHtml}</tbody>
+        </table>
+      ` : ''}
+
+      <h3>Daftar Rincian Transaksi</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:30px;text-align:center">No</th>
+            <th style="width:90px">Tanggal</th>
+            <th style="width:75px;text-align:center">Tipe</th>
+            <th style="width:130px">Kategori</th>
+            <th>Keterangan</th>
+            <th style="width:110px;text-align:right">Nominal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Dicetak otomatis dari Aplikasi DompetKu pada ${tglCetak} | Siap Simpan PDF
+      </div>
+    </body>
+    </html>
+  `;
+
+  const win = window.open('', '_blank');
+  if(win) {
+    win.document.write(printHtml);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { try { win.print(); } catch(e){} }, 350);
+  } else {
+    let iframe = document.getElementById("printIframe");
+    if(!iframe){
+      iframe = document.createElement("iframe");
+      iframe.id = "printIframe";
+      iframe.style.position = "fixed";
+      iframe.style.right = "-9999px";
+      iframe.style.bottom = "-9999px";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+    }
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(printHtml);
+    doc.close();
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 400);
+  }
+  toast("📄 Menyiapkan cetakan PDF...");
 }
 
 /* CETAK WORD (.doc) */
@@ -960,7 +1135,7 @@ function cetakKeWord() {
           <tr>
             <th style="width:40px;text-align:center">No</th>
             <th>Tanggal</th>
-            <th style="text-align:center">Tipe</th>
+            <text-align:center">Tipe</th>
             <th>Kategori</th>
             <th>Keterangan</th>
             <th style="text-align:right">Nominal</th>
@@ -1015,29 +1190,91 @@ function doLogin(e){
   bukaApp();
 }
 function bukaGoogle(){
+  toast("Menghubungkan ke Google...");
+
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope("email");
+      provider.addScope("profile");
+
+      firebase.auth().signInWithPopup(provider).then((result) => {
+        const gUser = result.user;
+        if (!gUser) return;
+        const email = (gUser.email || "").toLowerCase();
+        const nama = gUser.displayName || email.split("@")[0] || "Pengguna Google";
+
+        let u = DB.users.find(x => x.email === email);
+        if (!u) {
+          u = { id: uid("usr"), nama, email, password: null, provider: "google", role: "user", transaksi: [], dibuat: Date.now() };
+          DB.users.push(u);
+        } else {
+          u.provider = "google";
+          if (nama) u.nama = nama;
+        }
+
+        DB.sesi = u.id;
+        simpan();
+        toast("✅ Berhasil masuk sebagai " + u.nama);
+        bukaApp();
+      }).catch((err) => {
+        console.warn("Firebase Google Sign-In notice:", err.message);
+        tampilkanModalPilihGoogle();
+      });
+      return;
+    } catch (e) {
+      console.warn("Google Auth error:", e);
+    }
+  }
+
+  tampilkanModalPilihGoogle();
+}
+
+function tampilkanModalPilihGoogle(){
   const akun = DB.users.filter(u => u.provider === "google");
-  const daftar = akun.map(u =>
-    '<button type="button" class="btn btn-block btn-ghost" style="margin-bottom:8px;justify-content:flex-start" onclick="pilihAkunGoogle(\''+u.id+'\')">'
-    + '<b>'+esc(u.nama)+'</b> <span style="color:var(--muted);font-size:12px">('+esc(u.email)+')</span></button>').join("");
+  const daftar = akun.length ? akun.map(u =>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+    + '<button type="button" class="btn btn-block btn-ghost" style="flex:1;justify-content:flex-start;margin-bottom:0;text-align:left;height:auto;padding:10px 12px" onclick="pilihAkunGoogle(\''+u.id+'\')">'
+      + '<div><b>'+esc(u.nama)+'</b><br><span style="color:var(--muted);font-size:12px">'+esc(u.email)+'</span></div>'
+    + '</button>'
+    + '<button type="button" class="btn btn-danger" title="Hapus dari daftar" onclick="hapusAkunGoogle(\''+u.id+'\', event)" style="padding:10px 12px;flex:none;height:auto">🗑️ Hapus</button>'
+    + '</div>'
+  ).join("") : '<p class="desc" style="margin-bottom:12px;text-align:center">Belum ada akun Google terdaftar.</p>';
 
   modalHost.innerHTML = '<div class="modal" onclick="if(event.target===this)tutupModal()"><div class="modal-box">'
     + '<div class="modal-head"><h3>Pilih Akun Google</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
     + daftar
-    + '<form onsubmit="googleAkunBaru(event)" style="margin-top:12px">'
+    + '<form onsubmit="googleAkunBaru(event)" style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">'
+      + '<h4 style="margin:0 0 10px 0;font-size:13px;color:var(--muted)">Tambah / Masuk Akun Google Lain:</h4>'
       + '<div class="field"><label>Nama lengkap</label><input type="text" id="gNama" placeholder="Budi Santoso" required></div>'
       + '<div class="field"><label>Email Gmail</label><input type="email" id="gEmail" placeholder="budi@gmail.com" required></div>'
-      + '<button class="btn btn-block" type="submit">Lanjutkan</button>'
+      + '<button class="btn btn-block" type="submit">Lanjutkan dengan Google</button>'
     + '</form>'
     + '</div></div>';
 }
+
+function hapusAkunGoogle(id, ev){
+  if(ev) ev.stopPropagation();
+  if(!confirm("Yakin ingin menghapus akun Google ini dari daftar?")) return;
+  DB.users = DB.users.filter(u => u.id !== id);
+  if(DB.sesi === id) DB.sesi = null;
+  simpan();
+  toast("Akun Google berhasil dihapus.");
+  tampilkanModalPilihGoogle();
+}
+
 function pilihAkunGoogle(id){ DB.sesi = id; simpan(); tutupModal(); bukaApp(); }
 function googleAkunBaru(e){
   e.preventDefault();
   const nama = gNama.value.trim(), email = gEmail.value.trim().toLowerCase();
+  if(!email) return toast("Masukkan email Gmail.");
   let u = DB.users.find(x => x.email === email);
   if(!u){
-    u = { id:uid("usr"), nama, email, password:null, provider:"google", role:"user", transaksi:[], dibuat:Date.now() };
+    u = { id:uid("usr"), nama: nama || email.split("@")[0], email, password:null, provider:"google", role:"user", transaksi:[], dibuat:Date.now() };
     DB.users.push(u);
+  } else {
+    u.provider = "google";
+    if(nama) u.nama = nama;
   }
   DB.sesi = u.id; simpan(); tutupModal(); bukaApp();
 }
@@ -1051,6 +1288,7 @@ function bukaModalFirebase(){
       + '<span>Firebase: <b>'+(isOk?'Realtime Sync Active 🔥':'Terintegrasi Otomatis 🔥')+'</b></span>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
+      + '<button class="btn btn-block" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="tutupModal();cetakKePDF()">📕 Cetak Laporan PDF (.pdf)</button>'
       + '<button class="btn btn-block btn-word" onclick="tutupModal();cetakKeWord()">📄 Cetak Laporan Word (.doc)</button>'
       + '<button class="btn btn-block" onclick="toggleTheme()">🌗 Ganti Tema Dark/Light</button>'
       + '<button class="btn btn-block btn-danger" onclick="logout()">🚪 Keluar Akun</button>'
@@ -1323,7 +1561,31 @@ function kartuStat(icon, bg, warna, label, nilai, note){
 
 function halDashboard(u){
   const r = ringkas(u);
+  const me = perKategori(u);
+  const totalKeluar = r.keluar;
+  const meSorted = KATEGORI.map(k => ({ kat: k, val: me[k] || 0, warna: WARNA[k] || "var(--brand)" }))
+                           .sort((a,b) => b.val - a.val);
+
   const terakhir = [...(u.transaksi||[])].sort((a,b)=> new Date(b.tanggal)-new Date(a.tanggal)).slice(0,5);
+
+  let katHtml = "";
+  if(totalKeluar > 0) {
+    katHtml = meSorted.map(item => {
+      if(item.val === 0) return "";
+      const pct = Math.round((item.val / totalKeluar) * 100) || 0;
+      return '<div style="margin-bottom:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:13px">'
+          + '<span style="display:flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:'+item.warna+';display:inline-block"></i><b>'+esc(item.kat)+'</b></span>'
+          + '<span style="font-weight:700;color:var(--text)">'+rp(item.val)+' <small style="color:var(--muted);font-weight:600">('+pct+'%)</small></span>'
+        + '</div>'
+        + '<div style="height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;border:1px solid var(--border)">'
+          + '<div style="width:'+pct+'%;height:100%;background:'+item.warna+';border-radius:4px;transition:width 0.3s"></div>'
+        + '</div>'
+      + '</div>';
+    }).join("");
+  } else {
+    katHtml = '<p class="desc">Belum ada catatan pengeluaran bulan ini.</p>';
+  }
 
   return '<h2 class="page-header-title">Halo, '+esc(u.nama.split(" ")[0])+' 👋</h2>'
   + '<p class="page-header-sub">Ringkasan keuangan kamu saat ini.</p>'
@@ -1331,6 +1593,14 @@ function halDashboard(u){
     + kartuStat("💰","var(--brand-soft)","var(--brand)","Saldo", rp(r.saldo), "Dapat digunakan")
     + kartuStat("📉","var(--red-soft)","var(--red)","Pengeluaran", rp(r.keluar), "Bulan ini")
     + kartuStat("🐷","var(--purple-soft)","var(--purple)","Tabungan", rp(r.tabungan), "Tersimpan")
+  + '</div>'
+  + '<div class="card" style="margin-top:14px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">'
+      + '<h3 style="margin:0">📊 Pengeluaran Per Kategori</h3>'
+      + '<span class="badge" style="background:var(--red-soft);color:var(--red);font-weight:700">Total: '+rp(totalKeluar)+'</span>'
+    + '</div>'
+    + '<p class="desc" style="margin-bottom:12px">Rincian alokasi pengeluaran kamu berdasarkan kategori.</p>'
+    + katHtml
   + '</div>'
   + '<div class="card" style="margin-top:14px"><h3>Transaksi Terakhir</h3><p class="desc">5 catatan terbaru.</p>'
     + (terakhir.length ? terakhir.map(t =>
@@ -1455,9 +1725,12 @@ function halRiwayat(u){
       + '<button class="btn btn-sm btn-danger" onclick="hapusTrx(\''+t.id+'\')">✕</button>'
     + '</td></tr>').join("");
 
-  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
   + '<div><h2 class="page-header-title" style="margin:0">Riwayat Transaksi</h2><p class="page-header-sub" style="margin:2px 0 0">'+data.length+' catatan tersimpan.</p></div>'
-  + '<button class="btn btn-sm btn-word" onclick="cetakKeWord()" style="flex:none">📄 Cetak Word</button>'
+  + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    + '<button class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="cetakKePDF()">📕 Cetak PDF</button>'
+    + '<button class="btn btn-sm btn-word" onclick="cetakKeWord()">📄 Cetak Word</button>'
+  + '</div>'
   + '</div>'
   + '<div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Keterangan</th><th style="text-align:right">Nominal</th><th>Bukti</th><th>Aksi</th></tr></thead>'
   + '<tbody>'+ (baris || '<tr><td colspan="6" class="empty">Belum ada transaksi.</td></tr>') +'</tbody></table></div>';
