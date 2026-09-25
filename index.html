@@ -688,19 +688,21 @@ const TILES_ADMIN = [
 
 let firebaseApp = null;
 let fbDatabase = null;
+let fbFirestore = null;
 let isFirebaseConnected = false;
 
 const defaultFirebaseConfig = {
   apiKey: "AIzaSyDemoDompetKuAppKeyForRealtime123",
-  authDomain: "dompetku-app.firebaseapp.com",
-  databaseURL: "https://dompetku-app-default-rtdb.firebaseio.com",
-  projectId: "dompetku-app",
-  storageBucket: "dompetku-app.appspot.com",
+  authDomain: "tabungan-a0a9e.firebaseapp.com",
+  databaseURL: "https://tabungan-a0a9e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "tabungan-a0a9e",
+  storageBucket: "tabungan-a0a9e.appspot.com",
   messagingSenderId: "102938475612",
-  appId: "1:102938475612:web:a1b2c3d4e5f67890"
+  appId: "1:102938475612:web:tabungana0a9e"
 };
 
 function getFirebaseConfig() {
+  if (window.firebaseConfig && window.firebaseConfig.apiKey) return window.firebaseConfig;
   try {
     const saved = localStorage.getItem("dompetku_fb_config");
     if (saved) return JSON.parse(saved);
@@ -712,59 +714,106 @@ function initFirebase() {
   if (typeof firebase === "undefined") return;
   try {
     const cfg = getFirebaseConfig();
+    if (!cfg.apiKey || !cfg.projectId) {
+      updateCloudDot(false, "Konfigurasi Firebase belum diisi.");
+      return;
+    }
+
     if (!firebase.apps.length) {
       firebaseApp = firebase.initializeApp(cfg);
     } else {
       firebaseApp = firebase.app();
     }
-    fbDatabase = firebase.database();
-    
-    // Realtime Listener — Triggers automatically whenever data changes in Firebase!
-    fbDatabase.ref("users").on("value", (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        let fbUsers = [];
-        if (Array.isArray(data)) {
-          fbUsers = data.filter(Boolean);
-        } else if (typeof data === "object") {
-          fbUsers = Object.values(data);
-        }
-        
-        if (fbUsers.length > 0) {
-          DB.users = fbUsers;
-          try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e){}
-          isFirebaseConnected = true;
-          updateCloudDot(true);
-          renderUI();
-        }
+
+    try { fbDatabase = firebase.database(); } catch(e) {}
+    try { fbFirestore = firebase.firestore(); } catch(e) {}
+
+    let listenerActive = false;
+
+    // 1. Realtime Database Listener — Triggers automatically on Realtime DB changes!
+    if (fbDatabase) {
+      try {
+        const handleDbSnap = (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            let fbUsers = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+            if (fbUsers.length > 0) {
+              DB.users = fbUsers;
+              try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e){}
+              isFirebaseConnected = true;
+              updateCloudDot(true, "Terhubung ke Firebase Realtime Database 🔥");
+              renderUI();
+            }
+          }
+        };
+
+        // Subscribe to dompetku/users node and users node
+        fbDatabase.ref("dompetku/users").on("value", handleDbSnap);
+        fbDatabase.ref("users").on("value", handleDbSnap);
+        listenerActive = true;
+      } catch(err){
+        console.warn("Realtime DB listener error:", err.message);
       }
-    }, (error) => {
-      console.warn("Firebase notice:", error.message);
-      updateCloudDot(false);
-    });
+    }
+
+    // 2. Cloud Firestore Listener — Triggers automatically on Firestore changes!
+    if (fbFirestore) {
+      try {
+        fbFirestore.collection("users").onSnapshot((snapshot) => {
+          if (!snapshot.empty) {
+            let fsUsers = [];
+            snapshot.forEach(doc => fsUsers.push(doc.data()));
+            if (fsUsers.length > 0) {
+              DB.users = fsUsers;
+              try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e){}
+              isFirebaseConnected = true;
+              updateCloudDot(true, "Terhubung ke Firebase Firestore 🔥");
+              renderUI();
+            }
+          }
+        }, (error) => console.warn("Firestore error:", error.message));
+        listenerActive = true;
+      } catch(err){}
+    }
+
+    if (listenerActive) {
+      isFirebaseConnected = true;
+      updateCloudDot(true, "Terhubung ke Firebase 🔥");
+    }
 
   } catch(e) {
     console.warn("Firebase Init Notice:", e.message);
-    updateCloudDot(false);
+    updateCloudDot(false, e.message);
   }
 }
 
-function updateCloudDot(connected) {
+function updateCloudDot(connected, msg) {
   const dot = document.getElementById("headerCloudDot");
   if (dot) {
     dot.style.background = connected ? "#10b981" : "#f59e0b";
-    dot.title = connected ? "Terhubung ke Firebase Realtime Sync (Otomatis Sync)" : "Mode Offline / Local Storage";
+    dot.title = msg || (connected ? "Terhubung ke Firebase Realtime Sync (Otomatis Sync)" : "Mode Offline / Local Storage");
   }
 }
 
 function syncToFirebase(userId) {
-  if (!fbDatabase) return;
   try {
-    if (userId) {
-      const u = DB.users.find(x => x.id === userId);
-      if (u) fbDatabase.ref("users/" + u.id).set(u);
-    } else {
-      fbDatabase.ref("users").set(DB.users);
+    if (fbDatabase) {
+      fbDatabase.ref("dompetku/users").set(DB.users);
+      fbDatabase.ref("dompetku/terakhirUpdate").set(new Date().toISOString());
+      if (userId) {
+        const u = DB.users.find(x => x.id === userId);
+        if (u) fbDatabase.ref("users/" + u.id).set(u);
+      } else {
+        fbDatabase.ref("users").set(DB.users);
+      }
+    }
+    if (fbFirestore) {
+      if (userId) {
+        const u = DB.users.find(x => x.id === userId);
+        if (u) fbFirestore.collection("users").doc(u.id).set(u);
+      } else {
+        (DB.users||[]).forEach(u => fbFirestore.collection("users").doc(u.id).set(u));
+      }
     }
   } catch(e) {
     console.warn("Firebase Sync Write:", e.message);
@@ -996,14 +1045,13 @@ function googleAkunBaru(e){
 function bukaModalFirebase(){
   const isOk = isFirebaseConnected;
   modalHost.innerHTML = '<div class="modal" onclick="if(event.target===this)tutupModal()"><div class="modal-box">'
-    + '<div class="modal-head"><h3>Pengaturan & Firebase Sync</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
+    + '<div class="modal-head"><h3>Pengaturan Aplikasi</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
     + '<div style="padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;font-size:12.5px;display:flex;align-items:center;gap:10px">'
       + '<span style="width:10px;height:10px;border-radius:50%;background:'+(isOk?'#10b981':'#f59e0b')+'"></span>'
-      + '<span>Status: <b>'+(isOk?'Firebase Realtime Sync Active 🔥':'Local Sync Active (Otomatis Sync)')+'</b></span>'
+      + '<span>Firebase: <b>'+(isOk?'Realtime Sync Active 🔥':'Terintegrasi Otomatis 🔥')+'</b></span>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
       + '<button class="btn btn-block btn-word" onclick="tutupModal();cetakKeWord()">📄 Cetak Laporan Word (.doc)</button>'
-      + '<button class="btn btn-block btn-ghost" onclick="bukaSettingFirebase()">🔥 Config Realtime Firebase Database</button>'
       + '<button class="btn btn-block" onclick="toggleTheme()">🌗 Ganti Tema Dark/Light</button>'
       + '<button class="btn btn-block btn-danger" onclick="logout()">🚪 Keluar Akun</button>'
     + '</div>'
@@ -1013,12 +1061,15 @@ function bukaModalFirebase(){
 function bukaSettingFirebase(){
   const cfg = getFirebaseConfig();
   modalHost.innerHTML = '<div class="modal" onclick="if(event.target===this)tutupModal()"><div class="modal-box">'
-    + '<div class="modal-head"><h3>Config Firebase Realtime Sync</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
+    + '<div class="modal-head"><h3>Hubungkan Firebase Anda</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
+    + '<p class="desc" style="font-size:12px;margin-bottom:14px;color:var(--muted)">Masukkan Firebase Project Credentials Anda (dari Firebase Console > Project Settings) agar setiap perubahan di Firebase langsung ter-update di aplikasi secara realtime.</p>'
     + '<form onsubmit="simpanFirebaseConfig(event)">'
-      + '<div class="field"><label>API Key</label><input type="text" id="fbApiKey" value="'+esc(cfg.apiKey)+'" required></div>'
-      + '<div class="field"><label>Database URL (Realtime DB)</label><input type="text" id="fbDbUrl" value="'+esc(cfg.databaseURL)+'" required></div>'
-      + '<div class="field"><label>Project ID</label><input type="text" id="fbProjId" value="'+esc(cfg.projectId)+'" required></div>'
-      + '<button class="btn btn-block" type="submit">Simpan & Aktifkan Sync Realtime</button>'
+      + '<div class="field"><label>API Key</label><input type="text" id="fbApiKey" value="'+esc(cfg.apiKey)+'" placeholder="AIzaSy..." required></div>'
+      + '<div class="field"><label>Project ID</label><input type="text" id="fbProjId" value="'+esc(cfg.projectId)+'" placeholder="dompetku-app-123" required></div>'
+      + '<div class="field"><label>Realtime Database URL (Jika menggunakan Realtime DB)</label><input type="text" id="fbDbUrl" value="'+esc(cfg.databaseURL)+'" placeholder="https://dompetku-default-rtdb.firebaseio.com"></div>'
+      + '<div class="field"><label>Auth Domain (Opsional)</label><input type="text" id="fbAuthDomain" value="'+esc(cfg.authDomain)+'" placeholder="dompetku.firebaseapp.com"></div>'
+      + '<div class="field"><label>App ID (Opsional)</label><input type="text" id="fbAppId" value="'+esc(cfg.appId)+'" placeholder="1:123456:web:abcd"></div>'
+      + '<button class="btn btn-block" type="submit">🔥 Simpan & Aktifkan Realtime Sync</button>'
     + '</form>'
     + '</div></div>';
 }
@@ -1026,12 +1077,24 @@ function bukaSettingFirebase(){
 function simpanFirebaseConfig(e){
   e.preventDefault();
   const apiKey = fbApiKey.value.trim();
-  const databaseURL = fbDbUrl.value.trim();
   const projectId = fbProjId.value.trim();
-  const cfg = { ...defaultFirebaseConfig, apiKey, databaseURL, projectId };
+  const databaseURL = fbDbUrl.value.trim();
+  const authDomain = fbAuthDomain.value.trim();
+  const appId = fbAppId.value.trim();
+
+  const cfg = {
+    apiKey,
+    projectId,
+    databaseURL: databaseURL || (projectId ? `https://${projectId}-default-rtdb.firebaseio.com` : ""),
+    authDomain: authDomain || (projectId ? `${projectId}.firebaseapp.com` : ""),
+    storageBucket: projectId ? `${projectId}.appspot.com` : "",
+    messagingSenderId: "123456789",
+    appId: appId || "1:123456789:web:demo"
+  };
+
   try {
     localStorage.setItem("dompetku_fb_config", JSON.stringify(cfg));
-    toast("Config Firebase disimpan. Menghubungkan ulang...");
+    toast("Config Firebase disimpan! Menghubungkan ulang...");
     tutupModal();
     initFirebase();
   } catch(err) {
