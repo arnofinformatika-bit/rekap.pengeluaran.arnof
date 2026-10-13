@@ -915,26 +915,52 @@ function cetakKePDF() {
       if(val === 0) return "";
       const pct = Math.round((val / r.keluar) * 100);
       return '<tr>'
-        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;">'+esc(k)+'</td>'
-        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:right;font-weight:bold">'+rp(val)+'</td>'
-        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:center;">'+pct+'%</td>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;font-weight:600;color:#1e293b;">'+esc(k)+'</td>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:right;font-weight:700;color:#0f172a;">'+rp(val)+'</td>'
+        + '<td style="border:1px solid #cbd5e1;padding:6px 10px;text-align:center;">'
+          + '<div style="display:flex;align-items:center;justify-content:center;gap:6px;">'
+            + '<div style="flex:1;max-width:80px;background:#e2e8f0;border-radius:4px;height:7px;overflow:hidden;">'
+              + '<div style="background:#2563eb;height:100%;width:'+pct+'%;"></div>'
+            + '</div>'
+            + '<span style="font-weight:700;font-size:11px;min-width:32px;text-align:right;color:#334155;">'+pct+'%</span>'
+          + '</div>'
+        + '</td>'
       + '</tr>';
     }).join("");
   }
 
+  // Label badge tipe
+  const badgeTipePrint = tipe => {
+    const map = {
+      masuk: { label: "Pemasukan", bg: "#dcfce7", color: "#166534", border: "#bbf7d0" },
+      keluar: { label: "Pengeluaran", bg: "#fee2e2", color: "#991b1b", border: "#fecaca" },
+      nabung: { label: "Nabung", bg: "#f3e8ff", color: "#6b21a8", border: "#e9d5ff" },
+      tarik: { label: "Tarik", bg: "#e0f2fe", color: "#075985", border: "#bae6fd" }
+    };
+    const b = map[tipe] || { label: labelTipe(tipe), bg: "#f1f5f9", color: "#334155", border: "#cbd5e1" };
+    return `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;background:${b.bg};color:${b.color};border:1px solid ${b.border};text-transform:uppercase;letter-spacing:0.3px;">${esc(b.label)}</span>`;
+  };
+
+  // Kepadatan baris otomatis agar muat pas 1 kertas penuh
+  const isSuperCompact = data.length > 42;
+  const isCompact = data.length > 25;
+  const tableFontSize = isSuperCompact ? "9.5px" : (isCompact ? "10px" : "11px");
+  const tableCellPad = isSuperCompact ? "3px 6px" : (isCompact ? "4.5px 7px" : "6px 8px");
+  const headerCellPad = isSuperCompact ? "5px 6px" : "7px 8px";
+
   let tableRows = data.map((t, idx) => `
     <tr>
-      <td style="border:1px solid #e2e8f0;padding:8px;text-align:center">${idx + 1}</td>
-      <td style="border:1px solid #e2e8f0;padding:8px">${tglID(t.tanggal)}</td>
-      <td style="border:1px solid #e2e8f0;padding:8px;text-align:center;font-weight:bold">${labelTipe(t.tipe)}</td>
-      <td style="border:1px solid #e2e8f0;padding:8px">${esc(t.kategori || "—")}</td>
-      <td style="border:1px solid #e2e8f0;padding:8px">${esc(t.keterangan || "—")}</td>
-      <td style="border:1px solid #e2e8f0;padding:8px;text-align:right;font-weight:bold">${rp(t.nominal)}</td>
+      <td style="text-align:center;color:#64748b;font-weight:700">${idx + 1}</td>
+      <td style="white-space:nowrap;color:#334155;font-weight:500">${tglID(t.tanggal)}</td>
+      <td style="text-align:center">${badgeTipePrint(t.tipe)}</td>
+      <td style="font-weight:600;color:#1e293b">${esc(t.kategori || "—")}${t.usrNama ? ' <span style="font-size:8.5px;color:#64748b">('+esc(t.usrNama)+')</span>' : ''}</td>
+      <td style="color:#475569">${esc(t.keterangan || "—")}</td>
+      <td style="text-align:right;font-weight:700;white-space:nowrap;color:#0f172a">${rp(t.nominal)}</td>
     </tr>
   `).join("");
 
   if(!data.length) {
-    tableRows = `<tr><td colspan="6" style="border:1px solid #e2e8f0;padding:12px;text-align:center">Belum ada data transaksi tersimpan.</td></tr>`;
+    tableRows = `<tr><td colspan="6" style="border:1px solid #e2e8f0;padding:14px;text-align:center;color:#64748b">Belum ada data transaksi tersimpan.</td></tr>`;
   }
 
   const printHtml = `
@@ -944,86 +970,282 @@ function cetakKePDF() {
       <meta charset="utf-8">
       <title>Laporan Keuangan - ${esc(u.nama)}</title>
       <style>
-        @page { size: A4; margin: 15mm; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; padding: 20px; margin: 0; background: #ffffff; line-height: 1.5; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-        .header h1 { color: #2563eb; margin: 0; font-size: 22px; font-weight: 800; }
-        .header p { margin: 4px 0 0; font-size: 13px; color: #64748b; }
-        .meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: center; }
-        .stat-card .lbl { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }
-        .stat-card .val { font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 4px; }
-        h3 { color: #0f172a; font-size: 15px; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid #2563eb; padding-left: 8px; }
-        table.data-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        th { background: #2563eb; color: #ffffff; padding: 8px 10px; border: 1px solid #2563eb; text-align: left; }
-        td { border: 1px solid #e2e8f0; padding: 7px 10px; }
-        tr:nth-child(even) { background-color: #f8fafc; }
-        .footer { margin-top: 30px; font-size: 11px; color: #94a3b8; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+        @page {
+          size: A4 portrait;
+          margin: 10mm 12mm;
+        }
+        * {
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          color: #1e293b;
+          margin: 0;
+          padding: 0;
+          background: #ffffff;
+          line-height: 1.4;
+        }
+
+        /* LEMBAR 1: KHUSUS RINGKASAN & PENGELUARAN PER KATEGORI */
+        .sheet-page-1 {
+          page-break-after: always;
+          break-after: page;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        /* LEMBAR 2: KHUSUS TABEL RINCIAN TRANSAKSI (Dimulai di Kertas Baru & Pas 1 Kertas) */
+        .sheet-page-2 {
+          page-break-before: always;
+          break-before: page;
+        }
+
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 3px solid #2563eb;
+          padding-bottom: 10px;
+          margin-bottom: 14px;
+        }
+        .header h1 {
+          color: #2563eb;
+          margin: 0;
+          font-size: 20px;
+          font-weight: 800;
+          letter-spacing: -0.3px;
+        }
+        .header p {
+          margin: 3px 0 0;
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .meta-box {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 10px 14px;
+          margin-bottom: 14px;
+          font-size: 12px;
+        }
+        .meta-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px 16px;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .stat-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          padding: 8px 10px;
+          border-radius: 6px;
+          text-align: center;
+        }
+        .stat-card .lbl {
+          font-size: 10px;
+          text-transform: uppercase;
+          color: #64748b;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+        }
+        .stat-card .val {
+          font-size: 14px;
+          font-weight: 800;
+          margin-top: 3px;
+        }
+
+        .section-title {
+          color: #0f172a;
+          font-size: 13.5px;
+          margin-top: 14px;
+          margin-bottom: 8px;
+          border-left: 3.5px solid #2563eb;
+          padding-left: 8px;
+          font-weight: 700;
+        }
+
+        /* HEADER LEMBAR 2 */
+        .sheet-subhead {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          border-bottom: 2.5px solid #2563eb;
+          padding-bottom: 8px;
+          margin-bottom: 10px;
+        }
+        .sheet-subhead h2 {
+          color: #2563eb;
+          margin: 0;
+          font-size: 16px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
+        }
+        .sheet-subhead p {
+          margin: 2px 0 0;
+          font-size: 11px;
+          color: #64748b;
+        }
+        .sheet-badge {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 3px 8px;
+          border-radius: 4px;
+          display: inline-block;
+          white-space: nowrap;
+        }
+
+        /* TABEL TRANSAKSI */
+        table.data-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 6px;
+          font-size: ${tableFontSize};
+        }
+        table.data-table thead {
+          display: table-header-group;
+        }
+        table.data-table th {
+          background: #2563eb !important;
+          color: #ffffff !important;
+          padding: ${headerCellPad};
+          border: 1px solid #1d4ed8;
+          text-align: left;
+          font-weight: 700;
+          font-size: ${tableFontSize};
+          letter-spacing: 0.2px;
+        }
+        table.data-table td {
+          border: 1px solid #e2e8f0;
+          padding: ${tableCellPad};
+          vertical-align: middle;
+        }
+        table.data-table tr {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        table.data-table tbody tr:nth-child(even) {
+          background-color: #f8fafc !important;
+        }
+
+        .footer {
+          margin-top: 14px;
+          font-size: 10px;
+          color: #94a3b8;
+          text-align: right;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 8px;
+        }
+
+        @media screen {
+          body {
+            background: #f1f5f9;
+            padding: 20px;
+          }
+          .sheet-page-1, .sheet-page-2 {
+            background: #ffffff;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            max-width: 210mm;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
       </style>
     </head>
     <body>
-      <div class="header">
-        <div>
-          <h1>DOMPETKU — LAPORAN KEUANGAN</h1>
-          <p>Laporan Resmi Pemasukan & Pengeluaran</p>
+      <!-- HALAMAN / KERTAS 1: RINGKASAN & PENGELUARAN PER KATEGORI -->
+      <div class="sheet-page-1">
+        <div class="header">
+          <div>
+            <h1>DOMPETKU — LAPORAN KEUANGAN</h1>
+            <p>Laporan Resmi Rekapitulasi & Mutasi Keuangan</p>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800;font-size:13px;color:#2563eb">Laporan Eksekutif PDF</div>
+            <div style="font-size:11px;color:#64748b">${tglCetak}</div>
+          </div>
         </div>
-        <div style="text-align:right">
-          <div style="font-weight:800;font-size:14px;color:#2563eb">Laporan PDF</div>
-          <div style="font-size:12px;color:#64748b">${tglCetak}</div>
+
+        <div class="meta-box">
+          <div class="meta-grid">
+            <div><b>Nama Pengguna:</b> ${esc(u.nama)}</div>
+            <div><b>Email:</b> ${esc(u.email || "—")}</div>
+            <div><b>Peran:</b> ${esc(u.role.toUpperCase())}</div>
+            <div><b>Tanggal Cetak:</b> ${tglCetak}</div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><div class="lbl">Saldo Utama</div><div class="val" style="color:#2563eb">${rp(r.saldo)}</div></div>
+          <div class="stat-card"><div class="lbl">Total Pemasukan</div><div class="val" style="color:#16a34a">${rp(r.masuk)}</div></div>
+          <div class="stat-card"><div class="lbl">Total Pengeluaran</div><div class="val" style="color:#dc2626">${rp(r.keluar)}</div></div>
+          <div class="stat-card"><div class="lbl">Total Tabungan</div><div class="val" style="color:#9333ea">${rp(r.tabungan)}</div></div>
+        </div>
+
+        ${katRowsHtml ? `
+          <div class="section-title">Pengeluaran Per Kategori</div>
+          <table style="width:100%;max-width:540px;border-collapse:collapse;font-size:11.5px;margin-bottom:15px;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;padding:6px 10px;text-align:left;">Kategori</th>
+                <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;padding:6px 10px;text-align:right;">Jumlah</th>
+                <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;padding:6px 10px;text-align:center;width:130px;">Persentase</th>
+              </tr>
+            </thead>
+            <tbody>${katRowsHtml}</tbody>
+          </table>
+        ` : ''}
+
+        <div class="footer" style="margin-top:24px;">
+          Dicetak otomatis dari Aplikasi DompetKu pada ${tglCetak} | Ringkasan Eksekutif • Halaman 1 dari 2
         </div>
       </div>
 
-      <div class="meta-box">
-        <div class="meta-grid">
-          <div><b>Nama Pengguna:</b> ${esc(u.nama)}</div>
-          <div><b>Email:</b> ${esc(u.email || "—")}</div>
-          <div><b>Peran:</b> ${esc(u.role.toUpperCase())}</div>
-          <div><b>Tanggal Cetak:</b> ${tglCetak}</div>
+      <!-- HALAMAN / KERTAS 2: DAFTAR RINCIAN TRANSAKSI (MUAT 1 KERTAS) -->
+      <div class="sheet-page-2">
+        <div class="sheet-subhead">
+          <div>
+            <h2>DAFTAR RINCIAN TRANSAKSI</h2>
+            <p>Lampiran rincian mutasi & riwayat transaksi • Total: <b>${data.length} Transaksi</b></p>
+          </div>
+          <div style="text-align:right;">
+            <span class="sheet-badge">Halaman 2 — Lampiran Rincian</span>
+          </div>
         </div>
-      </div>
 
-      <div class="stats-grid">
-        <div class="stat-card"><div class="lbl">Saldo Utama</div><div class="val" style="color:#2563eb">${rp(r.saldo)}</div></div>
-        <div class="stat-card"><div class="lbl">Total Pemasukan</div><div class="val" style="color:#16a34a">${rp(r.masuk)}</div></div>
-        <div class="stat-card"><div class="lbl">Total Pengeluaran</div><div class="val" style="color:#dc2626">${rp(r.keluar)}</div></div>
-        <div class="stat-card"><div class="lbl">Total Tabungan</div><div class="val" style="color:#9333ea">${rp(r.tabungan)}</div></div>
-      </div>
-
-      ${katRowsHtml ? `
-        <h3>Pengeluaran Per Kategori</h3>
-        <table style="width:100%;max-width:500px;border-collapse:collapse;font-size:12px;margin-bottom:15px;">
+        <table class="data-table">
           <thead>
-            <tr style="background:#f1f5f9;">
-              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;">Kategori</th>
-              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;text-align:right;">Jumlah</th>
-              <th style="color:#334155;background:#e2e8f0;border:1px solid #cbd5e1;text-align:center;">Persentase</th>
+            <tr>
+              <th style="width:32px;text-align:center">No</th>
+              <th style="width:85px">Tanggal</th>
+              <th style="width:80px;text-align:center">Tipe</th>
+              <th style="width:125px">Kategori</th>
+              <th>Keterangan</th>
+              <th style="width:110px;text-align:right">Nominal</th>
             </tr>
           </thead>
-          <tbody>${katRowsHtml}</tbody>
+          <tbody>
+            ${tableRows}
+          </tbody>
         </table>
-      ` : ''}
 
-      <h3>Daftar Rincian Transaksi</h3>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th style="width:30px;text-align:center">No</th>
-            <th style="width:90px">Tanggal</th>
-            <th style="width:75px;text-align:center">Tipe</th>
-            <th style="width:130px">Kategori</th>
-            <th>Keterangan</th>
-            <th style="width:110px;text-align:right">Nominal</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
-
-      <div class="footer">
-        Dicetak otomatis dari Aplikasi DompetKu pada ${tglCetak} | Siap Simpan PDF
+        <div class="footer">
+          Dicetak otomatis dari Aplikasi DompetKu pada ${tglCetak} | Siap Simpan PDF • Halaman 2
+        </div>
       </div>
     </body>
     </html>
@@ -1193,7 +1415,7 @@ function bukaModalFirebase(){
     + '<div class="modal-head"><h3>Pengaturan Aplikasi</h3><button class="icon-btn" onclick="tutupModal()">✕</button></div>'
     + '<div style="padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;font-size:12.5px;display:flex;align-items:center;gap:10px">'
       + '<span style="width:10px;height:10px;border-radius:50%;background:'+(isOk?'#10b981':'#f59e0b')+'"></span>'
-      + '<span>Firebase: <b>'+(isOk?'Realtime Sync Active 🔥':'Terintegrasi Otomatis 🔥')+'</b></span>'
+      + '<span>Firebase: <b>'+(isOk?'Realtime Sync Active API':'Terintegrasi Otomatis API')+'</b></span>'
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
       + '<button class="btn btn-block" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="tutupModal();cetakKePDF()">📕 Cetak Laporan PDF (.pdf)</button>'
@@ -1215,7 +1437,7 @@ function bukaSettingFirebase(){
       + '<div class="field"><label>Realtime Database URL (Jika menggunakan Realtime DB)</label><input type="text" id="fbDbUrl" value="'+esc(cfg.databaseURL)+'" placeholder="https://dompetku-default-rtdb.firebaseio.com"></div>'
       + '<div class="field"><label>Auth Domain (Opsional)</label><input type="text" id="fbAuthDomain" value="'+esc(cfg.authDomain)+'" placeholder="dompetku.firebaseapp.com"></div>'
       + '<div class="field"><label>App ID (Opsional)</label><input type="text" id="fbAppId" value="'+esc(cfg.appId)+'" placeholder="1:123456:web:abcd"></div>'
-      + '<button class="btn btn-block" type="submit">🔥 Simpan & Aktifkan Realtime Sync</button>'
+      + '<button class="btn btn-block" type="submit"> API Simpan & Aktifkan Realtime Sync</button>'
     + '</form>'
     + '</div></div>';
 }
