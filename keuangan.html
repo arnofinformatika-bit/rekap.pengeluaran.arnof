@@ -14,51 +14,116 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <style>
 :root {
-  --bg: #f4f6fb;
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e2e8f0;
-  --text: #0f172a;
+  --bg: #eef2f9;
+  --bg-gradient: linear-gradient(145deg, #e4ecf7 0%, #f3f6fd 50%, #e9effa 100%);
+  --surface: #eaf0f9;
+  --surface-2: #e2eaf6;
+  --border: rgba(255, 255, 255, 0.7);
+  --text: #1e293b;
   --muted: #64748b;
-  --brand: #1d4ed8;
-  --brand-soft: #eff6ff;
+  --brand: #3b82f6;
+  --brand-soft: #dbeafe;
   --green: #10b981;
-  --green-soft: #ecfdf5;
-  --red: #ef4444;
-  --red-soft: #fef2f2;
+  --green-soft: #d1fae5;
+  --red: #f43f5e;
+  --red-soft: #ffe4e6;
   --amber: #f59e0b;
-  --amber-soft: #fffbeb;
+  --amber-soft: #fef3c7;
   --purple: #8b5cf6;
-  --purple-soft: #f5f3ff;
-  --card-bg: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #1d4ed8 100%);
-  --shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
-  --radius: 18px;
+  --purple-soft: #ede9fe;
+  --card-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+
+  /* CLAYMORPHISM TOKENS */
+  --clay-radius: 24px;
+  --clay-radius-sm: 16px;
+  --clay-radius-pill: 9999px;
+  --clay-shadow: 
+    12px 14px 28px rgba(166, 180, 200, 0.45),
+    -10px -10px 24px rgba(255, 255, 255, 0.95),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -3px -3px 6px rgba(166, 180, 200, 0.25);
+  --clay-shadow-sm: 
+    6px 8px 16px rgba(166, 180, 200, 0.35),
+    -5px -5px 14px rgba(255, 255, 255, 0.9),
+    inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.8),
+    inset -2px -2px 4px rgba(166, 180, 200, 0.2);
+  --clay-inset: 
+    inset 4px 4px 8px rgba(166, 180, 200, 0.4),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9),
+    0 2px 4px rgba(255, 255, 255, 0.5);
+  --clay-btn-brand:
+    8px 10px 22px rgba(37, 99, 235, 0.38),
+    -4px -4px 14px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+    inset -3px -3px 6px rgba(15, 23, 42, 0.25);
+  --clay-card-featured:
+    14px 18px 36px rgba(37, 99, 235, 0.32),
+    -8px -8px 24px rgba(255, 255, 255, 0.85),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.35),
+    inset -4px -4px 8px rgba(15, 23, 42, 0.25);
+  --shadow: var(--clay-shadow);
+  --radius: var(--clay-radius);
   box-sizing: border-box;
 }
 
 [data-theme="dark"] {
-  --bg: #0b0f19;
-  --surface: #151c2c;
-  --surface-2: #1e293b;
-  --border: #2a364f;
-  --text: #f1f5f9;
+  --bg: #0f172a;
+  --bg-gradient: linear-gradient(145deg, #0b1120 0%, #0f172a 50%, #141e33 100%);
+  --surface: #1e293b;
+  --surface-2: #162032;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #f8fafc;
   --muted: #94a3b8;
   --brand: #3b82f6;
   --brand-soft: #1e293b;
   --green: #34d399;
   --green-soft: #064e3b;
-  --red: #f87171;
-  --red-soft: #7f1d1d;
+  --red: #fb7185;
+  --red-soft: #4c0519;
   --amber: #fbbf24;
   --amber-soft: #78350f;
   --purple: #a78bfa;
-  --purple-soft: #4c1d95;
-  --card-bg: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1e40af 100%);
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --purple-soft: #3b0764;
+  --card-bg: linear-gradient(135deg, #1e3a8a 0%, #1e40af 60%, #2563eb 100%);
+
+  /* CLAYMORPHISM DARK TOKENS */
+  --clay-shadow: 
+    10px 14px 28px rgba(0, 0, 0, 0.55),
+    -6px -6px 20px rgba(255, 255, 255, 0.04),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.45);
+  --clay-shadow-sm: 
+    6px 8px 18px rgba(0, 0, 0, 0.5),
+    -4px -4px 12px rgba(255, 255, 255, 0.04),
+    inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.08),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.4);
+  --clay-inset: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.6),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.05);
+  --clay-btn-brand:
+    8px 10px 22px rgba(37, 99, 235, 0.45),
+    -4px -4px 14px rgba(255, 255, 255, 0.08),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.3),
+    inset -3px -3px 6px rgba(0, 0, 0, 0.4);
+  --clay-card-featured:
+    14px 18px 36px rgba(0, 0, 0, 0.6),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.25),
+    inset -4px -4px 8px rgba(0, 0, 0, 0.5);
+  --shadow: var(--clay-shadow);
 }
 
 *, *::before, *::after { box-sizing: inherit; }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
 button { font: inherit; cursor: pointer; border: none; outline: none; background: none; }
 input, select, textarea { font: inherit; color: inherit; }
 .hide { display: none !important; }
