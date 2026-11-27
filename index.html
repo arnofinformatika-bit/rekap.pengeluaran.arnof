@@ -15,7 +15,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root {
       --bg: #eef2f9;
@@ -2281,62 +2282,211 @@
         toast("📄 Menyiapkan cetakan PDF...");
       }
 
-      if (typeof html2pdf !== "undefined") {
-        toast("📥 Membuat & mengunduh file PDF...");
-        const parsed = new DOMParser().parseFromString(printHtml, "text/html");
-        const wrapper = document.createElement("div");
-        wrapper.className = "pdf-export-mode";
-        wrapper.style.position = "fixed";
-        wrapper.style.left = "-9999px";
-        wrapper.style.top = "0";
-        wrapper.style.width = "718px";
-        wrapper.style.background = "#ffffff";
-        wrapper.style.zIndex = "-1";
-        wrapper.style.pointerEvents = "none";
-        const styleEl = parsed.querySelector("style");
-        if (styleEl) wrapper.appendChild(styleEl.cloneNode(true));
-        const overrideStyle = document.createElement("style");
-        overrideStyle.textContent = `
-          .pdf-export-mode .sheet-page-1, .pdf-export-mode .sheet-page-2 {
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            max-width: 100% !important;
-          }
-          .pdf-export-mode .sheet-page-1 {
-            page-break-after: auto !important;
-            break-after: auto !important;
-          }
-          .pdf-export-mode table.data-table tr,
-          .pdf-export-mode .stat-card,
-          .pdf-export-mode .meta-box,
-          .pdf-export-mode .sheet-subhead,
-          .pdf-export-mode .footer {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-        `;
-        wrapper.appendChild(overrideStyle);
-        const bodyWrap = document.createElement("div");
-        bodyWrap.innerHTML = parsed.body.innerHTML;
-        wrapper.appendChild(bodyWrap);
-        document.body.appendChild(wrapper);
+      if (window.jspdf && window.jspdf.jsPDF) {
+        try {
+          toast("📥 Membuat & mengunduh file PDF...");
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+          const pageW = doc.internal.pageSize.getWidth();
+          const pageH = doc.internal.pageSize.getHeight();
+          const marginX = 12;
+          const contentW = pageW - marginX * 2;
 
-        html2pdf().set({
-          margin: [6, 10, 8, 10],
-          filename: pdfFileName,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 718 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.stat-card', '.meta-box', '.sheet-subhead', '.footer'] }
-        }).from(bodyWrap).save().then(() => {
-          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          // === HALAMAN 1: HEADER & RINGKASAN ===
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.setTextColor(37, 99, 235);
+          doc.text("DOMPETKU — LAPORAN KEUANGAN", marginX, 16);
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(100, 116, 139);
+          doc.text("Laporan Resmi Rekapitulasi & Mutasi Keuangan", marginX, 21);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(37, 99, 235);
+          doc.text("Laporan Eksekutif PDF", pageW - marginX, 15, { align: "right" });
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(tglCetak, pageW - marginX, 20, { align: "right" });
+
+          doc.setDrawColor(37, 99, 235);
+          doc.setLineWidth(0.7);
+          doc.line(marginX, 24, pageW - marginX, 24);
+
+          // Meta box
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(marginX, 28, contentW, 16, 2, 2, "FD");
+          doc.setFontSize(9);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont("helvetica", "bold");
+          doc.text("Nama Pengguna:", marginX + 4, 34);
+          doc.setFont("helvetica", "normal");
+          doc.text(String(u.nama || "—"), marginX + 33, 34);
+
+          doc.setFont("helvetica", "bold");
+          doc.text("Peran:", marginX + 4, 40);
+          doc.setFont("helvetica", "normal");
+          doc.text(String((u.role || "user").toUpperCase()), marginX + 33, 40);
+
+          const midX = marginX + contentW / 2 + 2;
+          doc.setFont("helvetica", "bold");
+          doc.text("Email:", midX, 34);
+          doc.setFont("helvetica", "normal");
+          doc.text(String(u.email || "—"), midX + 25, 34);
+
+          doc.setFont("helvetica", "bold");
+          doc.text("Tanggal Cetak:", midX, 40);
+          doc.setFont("helvetica", "normal");
+          doc.text(tglCetak, midX + 25, 40);
+
+          // 4 Stat Cards
+          const cards = [
+            { lbl: "SALDO UTAMA", val: rp(r.saldo), color: [37, 99, 235] },
+            { lbl: "TOTAL PEMASUKAN", val: rp(r.masuk), color: [22, 163, 74] },
+            { lbl: "TOTAL PENGELUARAN", val: rp(r.keluar), color: [220, 38, 38] },
+            { lbl: "TOTAL TABUNGAN", val: rp(r.tabungan), color: [147, 51, 234] }
+          ];
+          const gap = 3;
+          const cardW = (contentW - gap * 3) / 4;
+          cards.forEach((c, idx) => {
+            const cx = marginX + idx * (cardW + gap);
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(cx, 48, cardW, 17, 2, 2, "FD");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.2);
+            doc.setTextColor(100, 116, 139);
+            doc.text(c.lbl, cx + cardW / 2, 54, { align: "center" });
+            doc.setFontSize(10.5);
+            doc.setTextColor(...c.color);
+            doc.text(c.val, cx + cardW / 2, 61, { align: "center" });
+          });
+
+          // Pengeluaran Per Kategori
+          let nextY = 73;
+          if (me && r.keluar > 0 && typeof doc.autoTable === "function") {
+            doc.setFillColor(37, 99, 235);
+            doc.rect(marginX, nextY - 3.5, 1.2, 4.5, "F");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text("Pengeluaran Per Kategori", marginX + 3.5, nextY);
+
+            const katBody = KATEGORI.filter(k => (me[k] || 0) > 0).map(k => {
+              const val = me[k] || 0;
+              const pct = Math.round((val / r.keluar) * 100);
+              return [k, rp(val), pct + "%"];
+            });
+
+            doc.autoTable({
+              startY: nextY + 3,
+              margin: { left: marginX, right: marginX },
+              tableWidth: Math.min(contentW, 135),
+              head: [["KATEGORI", "JUMLAH", "PERSENTASE"]],
+              body: katBody,
+              theme: "grid",
+              styles: { fontSize: 9, cellPadding: 2.5, lineColor: [203, 213, 225], lineWidth: 0.2 },
+              headStyles: { fillColor: [226, 232, 240], textColor: [51, 65, 85], fontStyle: "bold" },
+              columnStyles: {
+                0: { fontStyle: "bold", textColor: [30, 41, 59] },
+                1: { halign: "right", fontStyle: "bold", textColor: [15, 23, 42] },
+                2: { halign: "center", fontStyle: "bold", textColor: [37, 99, 235], cellWidth: 30 }
+              }
+            });
+          }
+
+          // === HALAMAN 2+: DAFTAR RINCIAN TRANSAKSI ===
+          doc.addPage();
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.setTextColor(37, 99, 235);
+          doc.text("DAFTAR RINCIAN TRANSAKSI", marginX, 15);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`Lampiran rincian mutasi & riwayat transaksi • Total: ${data.length} Transaksi`, marginX, 20);
+          doc.setDrawColor(37, 99, 235);
+          doc.setLineWidth(0.6);
+          doc.line(marginX, 23, pageW - marginX, 23);
+
+          const trxBody = data.length
+            ? data.map((t, idx) => [
+                String(idx + 1),
+                tglID(t.tanggal),
+                labelTipe(t.tipe).toUpperCase(),
+                (t.kategori || "—") + (t.usrNama ? ` (${t.usrNama})` : ""),
+                t.keterangan || "—",
+                rp(t.nominal)
+              ])
+            : [["—", "—", "—", "Belum ada data transaksi tersimpan.", "—", "—"]];
+
+          doc.autoTable({
+            startY: 26,
+            margin: { top: 14, left: marginX, right: marginX, bottom: 14 },
+            head: [["NO", "TANGGAL", "TIPE", "KATEGORI", "KETERANGAN", "NOMINAL"]],
+            body: trxBody,
+            theme: "grid",
+            showHead: "everyPage",
+            rowPageBreak: "avoid",
+            styles: {
+              fontSize: 8,
+              cellPadding: 2,
+              textColor: [30, 41, 59],
+              lineColor: [226, 232, 240],
+              lineWidth: 0.2,
+              valign: "middle"
+            },
+            headStyles: {
+              fillColor: [37, 99, 235],
+              textColor: [255, 255, 255],
+              fontStyle: "bold",
+              fontSize: 8
+            },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+              0: { halign: "center", cellWidth: 10, textColor: [100, 116, 139], fontStyle: "bold" },
+              1: { cellWidth: 23, whiteSpace: "nowrap" },
+              2: { halign: "center", cellWidth: 24, fontStyle: "bold" },
+              3: { cellWidth: 34, fontStyle: "bold" },
+              4: { cellWidth: "auto" },
+              5: { halign: "right", cellWidth: 27, fontStyle: "bold", textColor: [15, 23, 42] }
+            },
+            didParseCell: function (hookData) {
+              if (hookData.section === "body" && hookData.column.index === 2) {
+                const v = String(hookData.cell.raw || "");
+                if (v.includes("MASUK")) hookData.cell.styles.textColor = [22, 101, 52];
+                else if (v.includes("KELUAR")) hookData.cell.styles.textColor = [153, 27, 27];
+                else if (v.includes("NABUNG")) hookData.cell.styles.textColor = [107, 33, 168];
+                else if (v.includes("TARIK")) hookData.cell.styles.textColor = [7, 89, 133];
+              }
+            }
+          });
+
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.setTextColor(148, 163, 184);
+            doc.text(
+              `Dicetak otomatis dari Aplikasi DompetKu pada ${tglCetak} • Halaman ${p} dari ${totalPages}`,
+              pageW - marginX,
+              pageH - 7,
+              { align: "right" }
+            );
+          }
+
+          doc.save(pdfFileName);
           toast("✅ PDF berhasil diunduh ke HP/perangkat!");
-        }).catch(() => {
-          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+        } catch (err) {
+          console.warn("jsPDF error, fallback print:", err);
           fallbackPrintPDF(printHtml);
-        });
+        }
       } else {
         fallbackPrintPDF(printHtml);
       }
