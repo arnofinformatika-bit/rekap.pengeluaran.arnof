@@ -1355,15 +1355,35 @@ function cetakKePDF() {
     toast("📥 Membuat & mengunduh file PDF...");
     const parsed = new DOMParser().parseFromString(printHtml, "text/html");
     const wrapper = document.createElement("div");
+    wrapper.className = "pdf-export-mode";
     wrapper.style.position = "fixed";
     wrapper.style.left = "-9999px";
     wrapper.style.top = "0";
-    wrapper.style.width = "794px";
+    wrapper.style.width = "703px";
     wrapper.style.background = "#ffffff";
     wrapper.style.zIndex = "-1";
     wrapper.style.pointerEvents = "none";
     const styleEl = parsed.querySelector("style");
     if (styleEl) wrapper.appendChild(styleEl.cloneNode(true));
+    const overrideStyle = document.createElement("style");
+    overrideStyle.textContent = `
+      .pdf-export-mode .sheet-page-1, .pdf-export-mode .sheet-page-2 {
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        max-width: 100% !important;
+      }
+      .pdf-export-mode table.data-table tr,
+      .pdf-export-mode .stat-card,
+      .pdf-export-mode .meta-box,
+      .pdf-export-mode .sheet-subhead,
+      .pdf-export-mode .footer {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    `;
+    wrapper.appendChild(overrideStyle);
     const bodyWrap = document.createElement("div");
     bodyWrap.innerHTML = parsed.body.innerHTML;
     wrapper.appendChild(bodyWrap);
@@ -1373,9 +1393,9 @@ function cetakKePDF() {
       margin: [10, 12, 10, 12],
       filename: pdfFileName,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 703 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.stat-card', '.meta-box', '.sheet-subhead', '.footer'] }
     }).from(bodyWrap).save().then(() => {
       if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
       toast("✅ PDF berhasil diunduh ke HP/perangkat!");
