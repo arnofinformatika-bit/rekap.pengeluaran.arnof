@@ -15,6 +15,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --bg: #eef2f9;
@@ -2246,35 +2247,75 @@
     </html>
   `;
 
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(printHtml);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { try { win.print(); } catch (e) { } }, 350);
-      } else {
-        let iframe = document.getElementById("printIframe");
-        if (!iframe) {
-          iframe = document.createElement("iframe");
-          iframe.id = "printIframe";
-          iframe.style.position = "fixed";
-          iframe.style.right = "-9999px";
-          iframe.style.bottom = "-9999px";
-          iframe.style.width = "0";
-          iframe.style.height = "0";
-          iframe.style.border = "0";
-          document.body.appendChild(iframe);
+      const pdfFileName = `Laporan_Keuangan_${u.nama.replace(/[^a-zA-Z0-9]+/g, "_")}_${tglHariIni()}.pdf`;
+
+      function fallbackPrintPDF(htmlStr) {
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(htmlStr);
+          win.document.close();
+          win.focus();
+          setTimeout(() => { try { win.print(); } catch (e) { } }, 350);
+        } else {
+          let iframe = document.getElementById("printIframe");
+          if (!iframe) {
+            iframe = document.createElement("iframe");
+            iframe.id = "printIframe";
+            iframe.style.position = "fixed";
+            iframe.style.right = "-9999px";
+            iframe.style.bottom = "-9999px";
+            iframe.style.width = "0";
+            iframe.style.height = "0";
+            iframe.style.border = "0";
+            document.body.appendChild(iframe);
+          }
+          const doc = iframe.contentWindow.document;
+          doc.open();
+          doc.write(htmlStr);
+          doc.close();
+          setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }, 400);
         }
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(printHtml);
-        doc.close();
-        setTimeout(() => {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-        }, 400);
+        toast("📄 Menyiapkan cetakan PDF...");
       }
-      toast("📄 Menyiapkan cetakan PDF...");
+
+      if (typeof html2pdf !== "undefined") {
+        toast("📥 Membuat & mengunduh file PDF...");
+        const parsed = new DOMParser().parseFromString(printHtml, "text/html");
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "fixed";
+        wrapper.style.left = "-9999px";
+        wrapper.style.top = "0";
+        wrapper.style.width = "794px";
+        wrapper.style.background = "#ffffff";
+        wrapper.style.zIndex = "-1";
+        wrapper.style.pointerEvents = "none";
+        const styleEl = parsed.querySelector("style");
+        if (styleEl) wrapper.appendChild(styleEl.cloneNode(true));
+        const bodyWrap = document.createElement("div");
+        bodyWrap.innerHTML = parsed.body.innerHTML;
+        wrapper.appendChild(bodyWrap);
+        document.body.appendChild(wrapper);
+
+        html2pdf().set({
+          margin: [10, 12, 10, 12],
+          filename: pdfFileName,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['css', 'legacy'] }
+        }).from(bodyWrap).save().then(() => {
+          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          toast("✅ PDF berhasil diunduh ke HP/perangkat!");
+        }).catch(() => {
+          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          fallbackPrintPDF(printHtml);
+        });
+      } else {
+        fallbackPrintPDF(printHtml);
+      }
     }
 
     /* CETAK WORD (.doc) */
@@ -2297,7 +2338,7 @@
       <td style="border:1px solid #cccccc;padding:8px;text-align:center">${idx + 1}</td>
       <td style="border:1px solid #cccccc;padding:8px">${tglID(t.tanggal)}</td>
       <td style="border:1px solid #cccccc;padding:8px;text-align:center;font-weight:bold">${labelTipe(t.tipe)}</td>
-      <td style="border:1px solid #cccccc;padding:8px">${esc(t.kategori || "—")}</td>
+      <td style="border:1px solid #cccccc;padding:8px">${esc(t.kategori || "—")}${t.usrNama ? ' (' + esc(t.usrNama) + ')' : ''}</td>
       <td style="border:1px solid #cccccc;padding:8px">${esc(t.keterangan || "—")}</td>
       <td style="border:1px solid #cccccc;padding:8px;text-align:right;font-weight:bold">${rp(t.nominal)}</td>
     </tr>
@@ -2367,13 +2408,16 @@
       const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
+      a.style.display = "none";
       a.href = url;
-      a.download = `Laporan_Keuangan_${u.nama.replace(/\s+/g, "_")}_${tglHariIni()}.doc`;
+      a.download = `Laporan_Keuangan_${u.nama.replace(/[^a-zA-Z0-9]+/g, "_")}_${tglHariIni()}.doc`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast("📄 Laporan Word (.doc) berhasil diunduh!");
+      setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1500);
+      toast("✅ Laporan Word (.doc) berhasil diunduh ke HP/perangkat!");
     }
 
     /* AUTH FUNCTIONS */
@@ -2413,8 +2457,8 @@
         + '<span>Firebase: <b>' + (isOk ? 'Realtime Sync Active 🔥' : 'Terintegrasi Otomatis 🔥') + '</b></span>'
         + '</div>'
         + '<div style="display:flex;flex-direction:column;gap:10px">'
-        + '<button class="btn btn-block" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="tutupModal();cetakKePDF()">📕 Cetak Laporan PDF (.pdf)</button>'
-        + '<button class="btn btn-block btn-word" onclick="tutupModal();cetakKeWord()">📄 Cetak Laporan Word (.doc)</button>'
+        + '<button class="btn btn-block" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="tutupModal();cetakKePDF()">📕 Download Laporan PDF (.pdf)</button>'
+        + '<button class="btn btn-block btn-word" onclick="tutupModal();cetakKeWord()">📄 Download Laporan Word (.doc)</button>'
         + '<button class="btn btn-block" onclick="toggleTheme()">🌗 Ganti Tema Dark/Light</button>'
         + '<button class="btn btn-block btn-danger" onclick="logout()">🚪 Keluar Akun</button>'
         + '</div>'
@@ -2891,8 +2935,8 @@
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
         + '<div><h2 class="page-header-title" style="margin:0">Riwayat Transaksi</h2><p class="page-header-sub" style="margin:2px 0 0">' + data.length + ' catatan tersimpan.</p></div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-        + '<button class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="cetakKePDF()">📕 Cetak PDF</button>'
-        + '<button class="btn btn-sm btn-word" onclick="cetakKeWord()">📄 Cetak Word</button>'
+        + '<button class="btn btn-sm" style="background:#dc2626;color:#fff;border:none;font-weight:700" onclick="cetakKePDF()">📕 Download PDF</button>'
+        + '<button class="btn btn-sm btn-word" onclick="cetakKeWord()">📄 Download Word</button>'
         + '</div>'
         + '</div>'
         + '<div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Keterangan</th><th style="text-align:right">Nominal</th><th>Bukti</th><th>Aksi</th></tr></thead>'
