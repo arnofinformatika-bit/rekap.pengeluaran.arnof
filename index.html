@@ -2289,7 +2289,7 @@
         wrapper.style.position = "fixed";
         wrapper.style.left = "-9999px";
         wrapper.style.top = "0";
-        wrapper.style.width = "703px";
+        wrapper.style.width = "718px";
         wrapper.style.background = "#ffffff";
         wrapper.style.zIndex = "-1";
         wrapper.style.pointerEvents = "none";
@@ -2303,6 +2303,10 @@
             box-shadow: none !important;
             border-radius: 0 !important;
             max-width: 100% !important;
+          }
+          .pdf-export-mode .sheet-page-1 {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           .pdf-export-mode table.data-table tr,
           .pdf-export-mode .stat-card,
@@ -2320,10 +2324,10 @@
         document.body.appendChild(wrapper);
 
         html2pdf().set({
-          margin: [10, 12, 10, 12],
+          margin: [6, 10, 8, 10],
           filename: pdfFileName,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 703 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 718 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
           pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.stat-card', '.meta-box', '.sheet-subhead', '.footer'] }
         }).from(bodyWrap).save().then(() => {
